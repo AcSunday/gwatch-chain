@@ -1,11 +1,11 @@
 package gwatch_chain
 
 import (
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
+	"github.com/AcSunday/gwatch-chain/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"gwatch_chain/chains/evm/contracts/abs"
-	"gwatch_chain/chains/evm/contracts/erc721"
-	"gwatch_chain/utils"
 	"testing"
 )
 

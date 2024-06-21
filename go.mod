@@ -1,4 +1,4 @@
-module gwatch_chain
+module github.com/AcSunday/gwatch-chain
 
 go 1.21.6
 

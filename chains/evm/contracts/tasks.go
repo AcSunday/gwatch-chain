@@ -1,6 +1,6 @@
 package contracts
 
-import "gwatch_chain/chains/evm/contracts/abs"
+import "github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 
 // TODO 通过tasks管理所有contract的扫描任务
 

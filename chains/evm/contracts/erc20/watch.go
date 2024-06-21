@@ -1,8 +1,8 @@
 package erc20
 
 import (
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/ethereum/go-ethereum/common"
-	"gwatch_chain/chains/evm/contracts/abs"
 )
 
 type ERC20 struct {

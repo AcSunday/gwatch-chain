@@ -1,8 +1,8 @@
 package contracts
 
 import (
-	"gwatch_chain/chains/evm/contracts/erc20"
-	"gwatch_chain/chains/evm/contracts/erc721"
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
 	"testing"
 )
 

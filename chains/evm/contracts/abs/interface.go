@@ -1,8 +1,8 @@
 package abs
 
 import (
+	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/core/types"
-	"gwatch_chain/rpcclient"
 )
 
 type IContract interface {
