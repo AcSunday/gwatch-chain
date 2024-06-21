@@ -1,5 +1,7 @@
 watch transaction events on the blockchain
 
+go version 1.22.2
+
 区块扫描，合约事件扫描
 
 supports
