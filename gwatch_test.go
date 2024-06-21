@@ -1,4 +1,4 @@
-package gwatch_chain
+package gwatch
 
 import (
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"

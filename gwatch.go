@@ -1,4 +1,4 @@
-package gwatch_chain
+package gwatch
 
 import (
 	"context"
