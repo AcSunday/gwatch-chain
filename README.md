@@ -8,3 +8,5 @@ supports
     - erc721
 
 通过注册Hook function的方式，处理合约事件
+
+简单用例请查看gwatch_test.go
