@@ -1,6 +1,6 @@
 module github.com/AcSunday/gwatch-chain
 
-go 1.21.6
+go 1.22.2
 
 require github.com/ethereum/go-ethereum v1.14.5
 
