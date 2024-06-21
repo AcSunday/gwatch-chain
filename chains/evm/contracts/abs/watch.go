@@ -1,0 +1,71 @@
+package abs
+
+import (
+	"context"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"gwatch_chain/rpcclient"
+	"math/big"
+	"time"
+)
+
+func (c *Contract) Watch(client *rpcclient.EvmClient) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// get latest block
+	latestNumber, err := client.BlockNumber(ctx)
+	if err != nil {
+		return err
+	}
+	if c.ProcessedBlockNumber+1 > latestNumber {
+		return nil
+	}
+
+	startBlockNumber := int64(c.ProcessedBlockNumber + 1)
+	endBlockNumber := startBlockNumber + c.WatchBlockLimit
+	if endBlockNumber > int64(latestNumber) {
+		endBlockNumber = int64(latestNumber)
+	}
+
+	// filter data on the chain
+	query := c.getFilterQuery(startBlockNumber, endBlockNumber)
+	logs, err := client.FilterLogs(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	for _, l := range logs {
+		// filter not have topic, or has been reverted
+		if len(l.Topics) == 0 || l.Removed {
+			continue
+		}
+
+		event := l.Topics[0]
+		err := c.HandleEvent(Event(event.Hex()), l)
+		if err != nil {
+			return err
+		}
+	}
+
+	c.UpdateProcessedBlockNumber(uint64(endBlockNumber))
+
+	return nil
+}
+
+func (c *Contract) getFilterQuery(startBlockNumber, endBlockNumber int64) ethereum.FilterQuery {
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			c.Addr,
+		},
+		FromBlock: big.NewInt(startBlockNumber),
+		ToBlock:   big.NewInt(endBlockNumber),
+	}
+
+	if len(c.Topics) > 0 {
+		query.Topics = make([][]common.Hash, 1)
+		query.Topics[0] = c.Topics
+	}
+
+	return query
+}
