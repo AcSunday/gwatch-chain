@@ -33,8 +33,8 @@ func ApprovalForAllEvent() abs.Event {
 	return abs.Event(crypto.Keccak256Hash([]byte("ApprovalForAll(address,address,bool)")).Hex())
 }
 
-// EventToString ...
-func EventToString(event abs.Event) string {
+// EventToName ...
+func EventToName(event abs.Event) string {
 	switch event {
 	case TransferEvent():
 		return transferEvent

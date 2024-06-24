@@ -25,8 +25,8 @@ func ApprovalEvent() abs.Event {
 	return abs.Event(crypto.Keccak256Hash([]byte("Approval(address,address,uint256)")).Hex())
 }
 
-// EventToString ...
-func EventToString(event abs.Event) string {
+// EventToName ...
+func EventToName(event abs.Event) string {
 	switch event {
 	case TransferEvent():
 		return transferEvent
