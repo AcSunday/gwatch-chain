@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
+	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
 	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +17,7 @@ type IWatch interface {
 	Watch() error
 
 	Close() error
+	DoneSignal() <-chan struct{}
 	RegisterWatchEvent(topics ...abs.Event) error
 	RegisterEventHook(event abs.Event, f func(log types.Log) error) error
 	UpdateProcessedBlockNumber(num uint64) error
@@ -49,6 +51,19 @@ func NewERC721Watch(rawurl string, addr common.Address, ops *Options) (IWatch, e
 	}
 
 	e := erc721.New(addr, &ops.Attrs)
+	e.ChainId = chainID.Uint64()
+
+	return &watch{client: client, IContract: e}, nil
+}
+
+func NewERC20Watch(rawurl string, addr common.Address, ops *Options) (IWatch, error) {
+	client := rpcclient.MustNewEvmRpcClient(rawurl)
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, errors.New("get chain id err:" + err.Error())
+	}
+
+	e := erc20.New(addr, &ops.Attrs)
 	e.ChainId = chainID.Uint64()
 
 	return &watch{client: client, IContract: e}, nil

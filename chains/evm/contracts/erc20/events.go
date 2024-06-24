@@ -5,6 +5,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// string event
+const (
+	transferEvent = "Transfer"
+	approvalEvent = "Approval"
+)
+
 // TransferEvent
 //
 // Transfer(address indexed from, address indexed to, uint256 value);
@@ -17,4 +23,16 @@ func TransferEvent() abs.Event {
 // Approval(address indexed owner, address indexed spender, uint256 value);
 func ApprovalEvent() abs.Event {
 	return abs.Event(crypto.Keccak256Hash([]byte("Approval(address,address,uint256)")).Hex())
+}
+
+// EventToString ...
+func EventToString(event abs.Event) string {
+	switch event {
+	case TransferEvent():
+		return transferEvent
+	case ApprovalEvent():
+		return approvalEvent
+	}
+
+	return ""
 }
