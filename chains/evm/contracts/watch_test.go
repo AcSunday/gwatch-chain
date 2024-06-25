@@ -44,7 +44,7 @@ func TestWatchERC20(t *testing.T) {
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])
 		amount := common.BytesToHash(log.Data)
 		//t.Logf("From: %s to: %s amount: %s", from, to, amount.Big().String())
-		t.Logf("From: %s to: %s amount: %f", from, to, utils.Amount2Str(int64(e.Decimals), amount.Big()))
+		t.Logf("From: %s to: %s amount: %f", from, to, utils.AmountToStr(int64(e.Decimals), amount.Big()))
 		return nil
 	})
 
