@@ -42,7 +42,7 @@ func (c *Contract) Watch(client *rpcclient.EvmClient) error {
 		}
 
 		event := l.Topics[0]
-		err := c.HandleEvent(Event(event.Hex()), l)
+		err := c.HandleEvent(client.Client, Event(event.Hex()), l)
 		if err != nil {
 			return err
 		}

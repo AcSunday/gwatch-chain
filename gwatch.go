@@ -9,6 +9,7 @@ import (
 	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // quick start
@@ -19,7 +20,7 @@ type IWatch interface {
 	Close() error
 	DoneSignal() <-chan struct{}
 	RegisterWatchEvent(topics ...abs.Event) error
-	RegisterEventHook(event abs.Event, f func(log types.Log) error) error
+	RegisterEventHook(event abs.Event, f func(client *ethclient.Client, log types.Log) error) error
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64
 }
@@ -56,7 +57,7 @@ func NewERC721Watch(rawurl string, addr common.Address, ops *Options) (IWatch, e
 	return &watch{client: client, IContract: e}, nil
 }
 
-func NewERC20Watch(rawurl string, addr common.Address, ops *Options) (IWatch, error) {
+func NewGeneralWatch(rawurl string, addr common.Address, ops *Options) (IWatch, error) {
 	client := rpcclient.MustNewEvmRpcClient(rawurl)
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {

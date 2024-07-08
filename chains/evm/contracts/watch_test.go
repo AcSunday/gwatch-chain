@@ -10,6 +10,7 @@ import (
 	"github.com/AcSunday/gwatch-chain/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"testing"
 )
 
@@ -38,7 +39,7 @@ func TestWatchERC20(t *testing.T) {
 	})
 
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
-	e.RegisterEventHook(erc20.TransferEvent(), func(log types.Log) error {
+	e.RegisterEventHook(erc20.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
 		t.Logf("------ transfer log txhash: %s ------", log.TxHash)
 		from := fmt.Sprintf("0x%s", log.Topics[1].String()[26:])
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])
@@ -73,7 +74,7 @@ func TestWatchERC721(t *testing.T) {
 	})
 
 	e.RegisterWatchEvent(erc721.ApprovalEvent(), erc721.TransferEvent(), erc721.ApprovalForAllEvent())
-	e.RegisterEventHook(erc721.TransferEvent(), func(log types.Log) error {
+	e.RegisterEventHook(erc721.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
 		t.Logf("------ transfer log txhash: %s ------", log.TxHash)
 		from := fmt.Sprintf("0x%s", log.Topics[1].String()[26:])
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])
