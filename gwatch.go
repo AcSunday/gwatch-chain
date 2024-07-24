@@ -1,12 +1,10 @@
 package gwatch
 
 import (
-	"context"
-	"errors"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
-	"github.com/AcSunday/gwatch-chain/rpcclient"
+	"github.com/AcSunday/gwatch-chain/loadbalance"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,42 +28,41 @@ type Options struct {
 }
 
 type watch struct {
-	client *rpcclient.EvmClient
+	lb loadbalance.LoadBalance
 	abs.IContract
 }
 
 func (w *watch) Watch() error {
-	return w.IContract.Watch(w.client)
+	cli := w.lb.NextClient()
+	//for {
+	//	if cli != nil {
+	//		break
+	//	}
+	//	cli = w.lb.NextClient()
+	//}
+	return w.IContract.Watch(cli)
 }
 
 func (w *watch) Close() error {
 	w.IContract.Close()
-	w.client.Close()
+	w.lb.Close()
 	return nil
 }
 
-func NewERC721Watch(rawurl string, addr common.Address, ops *Options) (IWatch, error) {
-	client := rpcclient.MustNewEvmRpcClient(rawurl)
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, errors.New("get chain id err:" + err.Error())
-	}
+func NewERC721Watch(rawurls []string, addr common.Address, ops *Options) (IWatch, error) {
+	l := loadbalance.New(rawurls)
 
 	e := erc721.New(addr, &ops.Attrs)
-	e.ChainId = chainID.Uint64()
+	e.ChainId = l.GetChainId()
 
-	return &watch{client: client, IContract: e}, nil
+	return &watch{lb: l, IContract: e}, nil
 }
 
-func NewGeneralWatch(rawurl string, addr common.Address, ops *Options) (IWatch, error) {
-	client := rpcclient.MustNewEvmRpcClient(rawurl)
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, errors.New("get chain id err:" + err.Error())
-	}
+func NewGeneralWatch(rawurls []string, addr common.Address, ops *Options) (IWatch, error) {
+	l := loadbalance.New(rawurls)
 
 	e := erc20.New(addr, &ops.Attrs)
-	e.ChainId = chainID.Uint64()
+	e.ChainId = l.GetChainId()
 
-	return &watch{client: client, IContract: e}, nil
+	return &watch{lb: l, IContract: e}, nil
 }

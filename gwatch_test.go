@@ -12,7 +12,7 @@ import (
 
 func TestQuickStart(t *testing.T) {
 	e, err := NewERC721Watch(
-		"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516",
+		[]string{"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516"},
 		common.HexToAddress("0x9643E463b77a6c562eb6d459980622fbB8a91e1D"),
 		&Options{
 			Attrs: abs.Attrs{
