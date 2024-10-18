@@ -66,3 +66,10 @@ func NewGeneralWatch(rawurls []string, addr common.Address, ops *Options) (IWatc
 
 	return &watch{lb: l, IContract: e}, nil
 }
+
+func NewLoadBalanceGeneralWatch(lb loadbalance.LoadBalance, addr common.Address, ops *Options) (IWatch, error) {
+	e := erc20.New(addr, &ops.Attrs)
+	e.ChainId = lb.GetChainId()
+
+	return &watch{lb: lb, IContract: e}, nil
+}
