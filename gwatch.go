@@ -17,7 +17,8 @@ type IWatch interface {
 
 	Close() error
 	DoneSignal() <-chan struct{}
-	RegisterWatchEvent(topics ...abs.Event) error
+	RegisterWatchEvent(events ...abs.Event) error
+	RegisterWatchTopics(topicsIndex int, topics ...common.Hash) error
 	RegisterEventHook(event abs.Event, f func(client *ethclient.Client, log types.Log) error) error
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64

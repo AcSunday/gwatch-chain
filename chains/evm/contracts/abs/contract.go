@@ -29,7 +29,7 @@ type Contract struct {
 	Attrs
 
 	Addr   common.Address
-	Topics []common.Hash
+	Topics [][]common.Hash
 
 	IsRunning atomic.Bool
 	IsClose   atomic.Bool
@@ -41,7 +41,7 @@ type Contract struct {
 }
 
 func (c *Contract) Init(attrs Attrs) {
-	c.Topics = make([]common.Hash, 0, 4)
+	c.Topics = make([][]common.Hash, 4)
 	c.handleFunc = make(map[Event]func(client *ethclient.Client, log types.Log) error, 4)
 
 	c.Attrs = attrs
@@ -74,17 +74,36 @@ func (c *Contract) DoneSignal() <-chan struct{} {
 	return nil
 }
 
-// RegisterWatchEvent topic is smart contract event
-func (c *Contract) RegisterWatchEvent(topics ...Event) error {
-	if c.IsRunning.Load() && len(c.Topics) > 0 {
-		return errors.New("already running, Registration of topics is prohibited")
+// RegisterWatchEvent topics[0] is smart contract event
+func (c *Contract) RegisterWatchEvent(events ...Event) error {
+	if c.IsRunning.Load() && len(c.Topics[0]) > 0 {
+		return errors.New("already running, Registration of events is prohibited")
 	}
 
-	sli := make([]common.Hash, 0, len(topics))
-	for _, topic := range topics {
-		sli = append(sli, common.HexToHash(topic.String()))
+	sli := make([]common.Hash, 0, len(events))
+	for _, event := range events {
+		sli = append(sli, common.HexToHash(event.String()))
 	}
-	c.Topics = append(c.Topics, sli...)
+	c.mu.Lock()
+	c.Topics[0] = append(c.Topics[0], sli...)
+	c.mu.Unlock()
+	return nil
+}
+
+// RegisterWatchTopics topic is smart contract event parameter
+//
+//	topicsIndex: [0-3]
+//	event topics
+func (c *Contract) RegisterWatchTopics(topicsIndex int, topics ...common.Hash) error {
+	if c.IsClose.Load() {
+		return errors.New("already closed, Registration of topics is prohibited")
+	}
+
+	c.mu.Lock()
+	if topicsIndex < len(c.Topics) {
+		c.Topics[topicsIndex] = append(c.Topics[topicsIndex], topics...)
+	}
+	c.mu.Unlock()
 	return nil
 }
 
@@ -94,7 +113,9 @@ func (c *Contract) RegisterEventHook(event Event, f func(client *ethclient.Clien
 	if c.IsClose.Load() {
 		return errors.New("already closed, Registration of event hook is prohibited")
 	}
+	c.mu.Lock()
 	c.handleFunc[event] = f
+	c.mu.Unlock()
 	return nil
 }
 
@@ -104,6 +125,8 @@ func (c *Contract) HandleEvent(client *ethclient.Client, event Event, log types.
 		return errors.New("not running, handle event is prohibited")
 	}
 
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if f, ok := c.handleFunc[event]; ok {
 		return f(client, log)
 	}
@@ -120,8 +143,8 @@ func (c *Contract) UpdateProcessedBlockNumber(num uint64) error {
 
 // UpdateProcessedBlockNumber ...
 func (c *Contract) GetProcessedBlockNumber() uint64 {
-	c.mu.RLocker().Lock()
-	defer c.mu.RLocker().Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.ProcessedBlockNumber
 }
 

@@ -63,8 +63,11 @@ func (c *Contract) getFilterQuery(startBlockNumber, endBlockNumber int64) ethere
 	}
 
 	if len(c.Topics) > 0 {
-		query.Topics = make([][]common.Hash, 1)
-		query.Topics[0] = c.Topics
+		query.Topics = c.Topics
+		//query.Topics = make([][]common.Hash, 4)
+		//query.Topics[0] = append(c.Topics, topics[0]...)
+		//query.Topics[2] = []common.Hash{common.HexToHash("0x59330ab2485985a1cd76cb0239bd37378978b0ea"),
+		//	common.HexToHash("0x73bf6617837d6ada5e5a48c1017af46b016e2dcb")}
 	}
 
 	return query

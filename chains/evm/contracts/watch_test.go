@@ -39,6 +39,7 @@ func TestWatchERC20(t *testing.T) {
 	})
 
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
+	e.RegisterWatchTopics(2, common.HexToHash("0x47ccd6b8e3e0e1b84ad818842fd68b209a6a9cd7"))
 	e.RegisterEventHook(erc20.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
 		t.Logf("------ transfer log txhash: %s ------", log.TxHash)
 		from := fmt.Sprintf("0x%s", log.Topics[1].String()[26:])
