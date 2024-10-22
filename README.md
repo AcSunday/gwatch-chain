@@ -11,4 +11,6 @@ supports
 
 通过注册Hook function的方式，处理合约事件
 
+支持topics过滤方式，过滤erc20类的from地址或to地址
+
 简单用例请查看gwatch_test.go
