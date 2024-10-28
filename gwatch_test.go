@@ -13,16 +13,16 @@ import (
 
 func TestQuickStartERC20(t *testing.T) {
 	e, err := NewGeneralWatch(
-		[]string{"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516"},
-		common.HexToAddress("0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"),
+		[]string{"https://bsc-rpc.publicnode.com"},
+		common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"),
 		&Options{
 			Attrs: abs.Attrs{
 				Chain:                "sepolia",
 				Name:                 "USDC",
 				Symbol:               "USDC",
-				Decimals:             6,
-				DeployedBlockNumber:  4848135,
-				ProcessedBlockNumber: 6136772,
+				Decimals:             18,
+				DeployedBlockNumber:  43512850,
+				ProcessedBlockNumber: 43512850,
 				WatchBlockLimit:      2,
 			},
 		},
@@ -33,14 +33,14 @@ func TestQuickStartERC20(t *testing.T) {
 
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
 	//e.RegisterWatchTopics(1, common.HexToHash("0xD7D761ce2e145FF4b72321F2075679ea42255286")) // filter from addr
-	e.RegisterWatchTopics(2, common.HexToHash("0x47ccd6b8e3e0e1b84ad818842fd68b209a6a9cd7")) // filter to addr
+	e.RegisterWatchTopics(2, common.HexToHash("0x9560d82d93a6a6d204df56f101964b26ce61e999")) // filter to addr
 	e.RegisterEventHook(erc20.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
 		t.Logf("------ %d transfer log txhash: %s ------", log.BlockNumber, log.TxHash)
 		from := utils.EventAddressHashFormat(log.Topics[1])
 		to := utils.EventAddressHashFormat(log.Topics[2])
 		amount := common.BytesToHash(log.Data)
 		//t.Logf("From: %s to: %s amount: %s", from, to, amount.Big().String())
-		t.Logf("From: %s to: %s amount: %f", from, to, utils.AmountToStr(6, amount.Big()))
+		t.Logf("From: %s to: %s amount: %f", from, to, utils.AmountToStr(18, amount.Big()))
 		return nil
 	})
 

@@ -41,7 +41,7 @@ type Contract struct {
 }
 
 func (c *Contract) Init(attrs Attrs) {
-	c.Topics = make([][]common.Hash, 4)
+	c.Topics = make([][]common.Hash, 1)
 	c.handleFunc = make(map[Event]func(client *ethclient.Client, log types.Log) error, 4)
 
 	c.Attrs = attrs
@@ -98,8 +98,14 @@ func (c *Contract) RegisterWatchTopics(topicsIndex int, topics ...common.Hash) e
 	if c.IsClose.Load() {
 		return errors.New("already closed, Registration of topics is prohibited")
 	}
+	if topicsIndex > 3 {
+		return errors.New("invalid topic index")
+	}
 
 	c.mu.Lock()
+	for i := len(c.Topics); i <= topicsIndex; i++ {
+		c.Topics = append(c.Topics, []common.Hash{})
+	}
 	if topicsIndex < len(c.Topics) {
 		c.Topics[topicsIndex] = append(c.Topics[topicsIndex], topics...)
 	}
