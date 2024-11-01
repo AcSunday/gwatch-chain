@@ -8,8 +8,11 @@ import (
 	"time"
 )
 
-// check interval
-const checkInterval = 5
+const (
+	// check interval
+	checkInterval          = 5
+	delayedClosingInterval = 10
+)
 
 type LoadBalance interface {
 	Close()
@@ -55,6 +58,11 @@ func connClient(url string) *rpcclient.EvmClient {
 	return client
 }
 
+func (l *loadBalance) delayedClosing(cli *rpcclient.EvmClient) {
+	time.Sleep(delayedClosingInterval * time.Second)
+	cli.Close()
+}
+
 // check health
 func (l *loadBalance) checkHealth() {
 	ticker := time.NewTicker(checkInterval * time.Second)
@@ -67,8 +75,8 @@ func (l *loadBalance) checkHealth() {
 			for i, url := range l.urls {
 				if !isHealthy(url) {
 					l.lock.Lock()
-					if _, ok := l.healthyCliMap[i]; ok {
-						l.healthyCliMap[i].Close()
+					if cli, ok := l.healthyCliMap[i]; ok {
+						l.delayedClosing(cli)
 						delete(l.healthyCliMap, i)
 					}
 					l.lock.Unlock()

@@ -13,13 +13,13 @@ import (
 
 func TestQuickStartERC20(t *testing.T) {
 	e, err := NewGeneralWatch(
-		[]string{"https://bsc-rpc.publicnode.com"},
+		[]string{"https://1rpc.io/bnb"},
 		common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"),
 		&Options{
 			Attrs: abs.Attrs{
-				Chain:                "sepolia",
-				Name:                 "USDC",
-				Symbol:               "USDC",
+				Chain:                "BNB",
+				Name:                 "USDT",
+				Symbol:               "USDT",
 				Decimals:             18,
 				DeployedBlockNumber:  43512850,
 				ProcessedBlockNumber: 43512850,

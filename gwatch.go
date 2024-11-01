@@ -1,6 +1,7 @@
 package gwatch
 
 import (
+	"errors"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
@@ -35,12 +36,15 @@ type watch struct {
 
 func (w *watch) Watch() error {
 	cli := w.lb.NextClient()
-	//for {
-	//	if cli != nil {
-	//		break
-	//	}
-	//	cli = w.lb.NextClient()
-	//}
+	for i := 0; i < 3; i++ {
+		if cli != nil {
+			break
+		}
+		cli = w.lb.NextClient()
+	}
+	if cli == nil {
+		return errors.New("no clients available, failed to connect to blockchain")
+	}
 	return w.IContract.Watch(cli)
 }
 
