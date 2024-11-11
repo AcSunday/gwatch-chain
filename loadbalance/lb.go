@@ -76,8 +76,8 @@ func (l *loadBalance) checkHealth() {
 				if !isHealthy(url) {
 					l.lock.Lock()
 					if cli, ok := l.healthyCliMap[i]; ok {
-						l.delayedClosing(cli)
 						delete(l.healthyCliMap, i)
+						l.delayedClosing(cli)
 					}
 					l.lock.Unlock()
 					continue
