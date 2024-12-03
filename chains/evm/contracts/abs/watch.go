@@ -54,7 +54,7 @@ func (c *Contract) Watch(client *rpcclient.EvmClient) error {
 
 func (c *Contract) getFilterQuery(startBlockNumber, endBlockNumber int64) ethereum.FilterQuery {
 	query := ethereum.FilterQuery{
-		Addresses: c.Addr,
+		Addresses: c.Addrs,
 		FromBlock: big.NewInt(startBlockNumber),
 		ToBlock:   big.NewInt(endBlockNumber),
 	}

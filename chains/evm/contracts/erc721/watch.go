@@ -9,10 +9,10 @@ type ERC721 struct {
 	abs.Contract
 }
 
-func New(addr []common.Address, attrs *abs.Attrs) *ERC721 {
+func New(addrs []common.Address, attrs *abs.Attrs) *ERC721 {
 	e := &ERC721{
 		Contract: abs.Contract{
-			Addr: addr,
+			Addrs: addrs,
 		},
 	}
 	e.Init(*attrs)

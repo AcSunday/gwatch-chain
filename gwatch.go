@@ -54,26 +54,26 @@ func (w *watch) Close() error {
 	return nil
 }
 
-func NewERC721Watch(rawurls []string, addr []common.Address, ops *Options) (IWatch, error) {
+func NewERC721Watch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {
 	l := loadbalance.New(rawurls)
 
-	e := erc721.New(addr, &ops.Attrs)
+	e := erc721.New(addrs, &ops.Attrs)
 	e.ChainId = l.GetChainId()
 
 	return &watch{lb: l, IContract: e}, nil
 }
 
-func NewGeneralWatch(rawurls []string, addr []common.Address, ops *Options) (IWatch, error) {
+func NewGeneralWatch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {
 	l := loadbalance.New(rawurls)
 
-	e := erc20.New(addr, &ops.Attrs)
+	e := erc20.New(addrs, &ops.Attrs)
 	e.ChainId = l.GetChainId()
 
 	return &watch{lb: l, IContract: e}, nil
 }
 
-func NewLoadBalanceGeneralWatch(lb loadbalance.LoadBalance, addr []common.Address, ops *Options) (IWatch, error) {
-	e := erc20.New(addr, &ops.Attrs)
+func NewLoadBalanceGeneralWatch(lb loadbalance.LoadBalance, addrs []common.Address, ops *Options) (IWatch, error) {
+	e := erc20.New(addrs, &ops.Attrs)
 	e.ChainId = lb.GetChainId()
 
 	return &watch{lb: lb, IContract: e}, nil
