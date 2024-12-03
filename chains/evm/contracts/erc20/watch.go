@@ -9,7 +9,7 @@ type ERC20 struct {
 	abs.Contract
 }
 
-func New(addr common.Address, attrs *abs.Attrs) *ERC20 {
+func New(addr []common.Address, attrs *abs.Attrs) *ERC20 {
 	e := &ERC20{
 		Contract: abs.Contract{
 			Addr: addr,

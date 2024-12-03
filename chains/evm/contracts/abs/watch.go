@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"time"
 )
@@ -55,9 +54,7 @@ func (c *Contract) Watch(client *rpcclient.EvmClient) error {
 
 func (c *Contract) getFilterQuery(startBlockNumber, endBlockNumber int64) ethereum.FilterQuery {
 	query := ethereum.FilterQuery{
-		Addresses: []common.Address{
-			c.Addr,
-		},
+		Addresses: c.Addr,
 		FromBlock: big.NewInt(startBlockNumber),
 		ToBlock:   big.NewInt(endBlockNumber),
 	}

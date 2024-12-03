@@ -28,7 +28,7 @@ type Attrs struct {
 type Contract struct {
 	Attrs
 
-	Addr   common.Address
+	Addr   []common.Address
 	Topics [][]common.Hash
 
 	IsRunning atomic.Bool

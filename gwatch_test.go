@@ -14,7 +14,7 @@ import (
 func TestQuickStartERC20(t *testing.T) {
 	e, err := NewGeneralWatch(
 		[]string{"https://1rpc.io/bnb"},
-		common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"),
+		[]common.Address{common.HexToAddress("0x55d398326f99059ff775485246999027b3197955")}, // contract address
 		&Options{
 			Attrs: abs.Attrs{
 				Chain:                "BNB",
@@ -55,7 +55,7 @@ func TestQuickStartERC20(t *testing.T) {
 func TestQuickStartERC721(t *testing.T) {
 	e, err := NewERC721Watch(
 		[]string{"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516"},
-		common.HexToAddress("0x9643E463b77a6c562eb6d459980622fbB8a91e1D"),
+		[]common.Address{common.HexToAddress("0x9643E463b77a6c562eb6d459980622fbB8a91e1D")},
 		&Options{
 			Attrs: abs.Attrs{
 				Chain:                "sepolia",
