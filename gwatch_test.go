@@ -4,10 +4,10 @@ import (
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
+	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/AcSunday/gwatch-chain/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"testing"
 )
 
@@ -34,7 +34,7 @@ func TestQuickStartERC20(t *testing.T) {
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
 	//e.RegisterWatchTopics(1, common.HexToHash("0xD7D761ce2e145FF4b72321F2075679ea42255286")) // filter from addr
 	e.RegisterWatchTopics(2, common.HexToHash("0x9560d82d93a6a6d204df56f101964b26ce61e999")) // filter to addr
-	e.RegisterEventHook(erc20.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
+	e.RegisterEventHook(erc20.TransferEvent(), func(client *rpcclient.EvmClient, log types.Log) error {
 		t.Logf("------ %d transfer log txhash: %s ------", log.BlockNumber, log.TxHash)
 		from := utils.EventAddressHashFormat(log.Topics[1])
 		to := utils.EventAddressHashFormat(log.Topics[2])
@@ -72,7 +72,7 @@ func TestQuickStartERC721(t *testing.T) {
 	}
 
 	e.RegisterWatchEvent(erc721.ApprovalEvent(), erc721.TransferEvent(), erc721.ApprovalForAllEvent())
-	e.RegisterEventHook(erc721.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
+	e.RegisterEventHook(erc721.TransferEvent(), func(client *rpcclient.EvmClient, log types.Log) error {
 		t.Logf("------ %d transfer log txhash: %s ------", log.BlockNumber, log.TxHash)
 		from := utils.EventAddressHashFormat(log.Topics[1])
 		to := utils.EventAddressHashFormat(log.Topics[2])

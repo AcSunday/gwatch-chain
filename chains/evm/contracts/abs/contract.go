@@ -3,9 +3,9 @@ package abs
 import (
 	"context"
 	"errors"
+	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"sync"
 	"sync/atomic"
 )
@@ -34,7 +34,7 @@ type Contract struct {
 	IsRunning atomic.Bool
 	IsClose   atomic.Bool
 
-	handleFunc map[Event]func(client *ethclient.Client, log types.Log) error // key is event
+	handleFunc map[Event]func(client *rpcclient.EvmClient, log types.Log) error // key is event
 	mu         sync.RWMutex
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -42,7 +42,7 @@ type Contract struct {
 
 func (c *Contract) Init(attrs Attrs) {
 	c.Topics = make([][]common.Hash, 1)
-	c.handleFunc = make(map[Event]func(client *ethclient.Client, log types.Log) error, 4)
+	c.handleFunc = make(map[Event]func(client *rpcclient.EvmClient, log types.Log) error, 4)
 
 	c.Attrs = attrs
 	if c.WatchBlockLimit <= 0 {
@@ -115,7 +115,7 @@ func (c *Contract) RegisterWatchTopics(topicsIndex int, topics ...common.Hash) e
 
 // RegisterEventHook Hook is a function that handles event,
 // HandleEvent method call this Hook
-func (c *Contract) RegisterEventHook(event Event, f func(client *ethclient.Client, log types.Log) error) error {
+func (c *Contract) RegisterEventHook(event Event, f func(client *rpcclient.EvmClient, log types.Log) error) error {
 	if c.IsClose.Load() {
 		return errors.New("already closed, Registration of event hook is prohibited")
 	}
@@ -126,7 +126,7 @@ func (c *Contract) RegisterEventHook(event Event, f func(client *ethclient.Clien
 }
 
 // HandleEvent method call Hook
-func (c *Contract) HandleEvent(client *ethclient.Client, event Event, log types.Log) error {
+func (c *Contract) HandleEvent(client *rpcclient.EvmClient, event Event, log types.Log) error {
 	if !c.IsRunning.Load() {
 		return errors.New("not running, handle event is prohibited")
 	}

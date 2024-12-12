@@ -10,7 +10,6 @@ import (
 	"github.com/AcSunday/gwatch-chain/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"testing"
 )
 
@@ -27,7 +26,7 @@ func TestWatchERC20(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := erc20.New(common.HexToAddress(ERC20ContractAddr), &abs.Attrs{
+	e := erc20.New([]common.Address{common.HexToAddress(ERC20ContractAddr)}, &abs.Attrs{
 		ChainId:              chainID.Uint64(),
 		Chain:                "sepolia",
 		Name:                 "USDC",
@@ -40,7 +39,7 @@ func TestWatchERC20(t *testing.T) {
 
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
 	e.RegisterWatchTopics(2, common.HexToHash("0x47ccd6b8e3e0e1b84ad818842fd68b209a6a9cd7"))
-	e.RegisterEventHook(erc20.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
+	e.RegisterEventHook(erc20.TransferEvent(), func(client *rpcclient.EvmClient, log types.Log) error {
 		t.Logf("------ transfer log txhash: %s ------", log.TxHash)
 		from := fmt.Sprintf("0x%s", log.Topics[1].String()[26:])
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])
@@ -64,7 +63,7 @@ func TestWatchERC721(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := erc721.New(common.HexToAddress(NFTContractAddr), &abs.Attrs{
+	e := erc721.New([]common.Address{common.HexToAddress(NFTContractAddr)}, &abs.Attrs{
 		ChainId:              chainID.Uint64(),
 		Chain:                "sepolia",
 		Name:                 "POPTAG",
@@ -75,7 +74,7 @@ func TestWatchERC721(t *testing.T) {
 	})
 
 	e.RegisterWatchEvent(erc721.ApprovalEvent(), erc721.TransferEvent(), erc721.ApprovalForAllEvent())
-	e.RegisterEventHook(erc721.TransferEvent(), func(client *ethclient.Client, log types.Log) error {
+	e.RegisterEventHook(erc721.TransferEvent(), func(client *rpcclient.EvmClient, log types.Log) error {
 		t.Logf("------ transfer log txhash: %s ------", log.TxHash)
 		from := fmt.Sprintf("0x%s", log.Topics[1].String()[26:])
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])

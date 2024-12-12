@@ -6,9 +6,9 @@ import (
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
 	"github.com/AcSunday/gwatch-chain/loadbalance"
+	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // quick start
@@ -20,7 +20,7 @@ type IWatch interface {
 	DoneSignal() <-chan struct{}
 	RegisterWatchEvent(events ...abs.Event) error
 	RegisterWatchTopics(topicsIndex int, topics ...common.Hash) error
-	RegisterEventHook(event abs.Event, f func(client *ethclient.Client, log types.Log) error) error
+	RegisterEventHook(event abs.Event, f func(client *rpcclient.EvmClient, log types.Log) error) error
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64
 }
