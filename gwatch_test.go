@@ -11,19 +11,28 @@ import (
 	"testing"
 )
 
+const (
+	ERC20  = "0x55d398326f99059ff775485246999027b3197955"
+	ERC721 = "0x9643E463b77a6c562eb6d459980622fbB8a91e1D"
+)
+
 func TestQuickStartERC20(t *testing.T) {
 	e, err := NewGeneralWatch(
 		[]string{"https://1rpc.io/bnb"},
-		[]common.Address{common.HexToAddress("0x55d398326f99059ff775485246999027b3197955")}, // contract address
+		[]common.Address{common.HexToAddress(ERC20)}, // contract address
 		&Options{
 			Attrs: abs.Attrs{
 				Chain:                "BNB",
-				Name:                 "USDT",
-				Symbol:               "USDT",
-				Decimals:             18,
 				DeployedBlockNumber:  43512850,
 				ProcessedBlockNumber: 43512850,
 				WatchBlockLimit:      2,
+				ContractToDesc: map[string]abs.ContractDesc{
+					ERC20: {
+						Name:     "USDT",
+						Symbol:   "USDT",
+						Decimals: 18,
+					},
+				},
 			},
 		},
 	)
@@ -55,15 +64,19 @@ func TestQuickStartERC20(t *testing.T) {
 func TestQuickStartERC721(t *testing.T) {
 	e, err := NewERC721Watch(
 		[]string{"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516"},
-		[]common.Address{common.HexToAddress("0x9643E463b77a6c562eb6d459980622fbB8a91e1D")},
+		[]common.Address{common.HexToAddress(ERC721)},
 		&Options{
 			Attrs: abs.Attrs{
 				Chain:                "sepolia",
-				Name:                 "POPTAG",
-				Symbol:               "POP",
 				DeployedBlockNumber:  6060135,
 				ProcessedBlockNumber: 6152533,
 				WatchBlockLimit:      50,
+				ContractToDesc: map[string]abs.ContractDesc{
+					ERC721: {
+						Name:   "POPTAG",
+						Symbol: "POP",
+					},
+				},
 			},
 		},
 	)

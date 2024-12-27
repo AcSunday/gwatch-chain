@@ -29,12 +29,16 @@ func TestWatchERC20(t *testing.T) {
 	e := erc20.New([]common.Address{common.HexToAddress(ERC20ContractAddr)}, &abs.Attrs{
 		ChainId:              chainID.Uint64(),
 		Chain:                "sepolia",
-		Name:                 "USDC",
-		Symbol:               "USDC",
-		Decimals:             6,
 		DeployedBlockNumber:  4848135,
 		ProcessedBlockNumber: 6136772,
 		WatchBlockLimit:      2,
+		ContractToDesc: map[string]abs.ContractDesc{
+			ERC20ContractAddr: {
+				Name:     "USDC",
+				Symbol:   "USDC",
+				Decimals: 6,
+			},
+		},
 	})
 
 	e.RegisterWatchEvent(erc20.ApprovalEvent(), erc20.TransferEvent())
@@ -45,7 +49,7 @@ func TestWatchERC20(t *testing.T) {
 		to := fmt.Sprintf("0x%s", log.Topics[2].String()[26:])
 		amount := common.BytesToHash(log.Data)
 		//t.Logf("From: %s to: %s amount: %s", from, to, amount.Big().String())
-		t.Logf("From: %s to: %s amount: %f", from, to, utils.AmountToStr(int64(e.Decimals), amount.Big()))
+		t.Logf("From: %s to: %s amount: %f", from, to, utils.AmountToStr(int64(e.ContractToDesc[log.Address.String()].Decimals), amount.Big()))
 		return nil
 	})
 
@@ -66,11 +70,15 @@ func TestWatchERC721(t *testing.T) {
 	e := erc721.New([]common.Address{common.HexToAddress(NFTContractAddr)}, &abs.Attrs{
 		ChainId:              chainID.Uint64(),
 		Chain:                "sepolia",
-		Name:                 "POPTAG",
-		Symbol:               "POP",
 		DeployedBlockNumber:  6060135,
 		ProcessedBlockNumber: 6152533,
 		WatchBlockLimit:      50,
+		ContractToDesc: map[string]abs.ContractDesc{
+			NFTContractAddr: {
+				Name:   "POPTAG",
+				Symbol: "POP",
+			},
+		},
 	})
 
 	e.RegisterWatchEvent(erc721.ApprovalEvent(), erc721.TransferEvent(), erc721.ApprovalForAllEvent())

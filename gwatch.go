@@ -23,6 +23,7 @@ type IWatch interface {
 	RegisterEventHook(event abs.Event, f func(client *rpcclient.EvmClient, log types.Log) error) error
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64
+	GetContractDesc(addr string) (abs.ContractDesc, error)
 }
 
 type Options struct {

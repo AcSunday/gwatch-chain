@@ -17,12 +17,16 @@ const DefaultWatchLimit = 20
 type Attrs struct {
 	ChainId              uint64
 	Chain                string
-	Name                 string
-	Symbol               string
-	Decimals             uint8
 	DeployedBlockNumber  uint64 // contract deployment height
 	ProcessedBlockNumber uint64 // has been processed on block number, default is DeployedBlockNumber
 	WatchBlockLimit      int64  // Limit the number of blocks scanned each time, default is 20
+	ContractToDesc       map[string]ContractDesc
+}
+
+type ContractDesc struct {
+	Name     string
+	Symbol   string
+	Decimals uint8
 }
 
 type Contract struct {
@@ -152,6 +156,14 @@ func (c *Contract) GetProcessedBlockNumber() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.ProcessedBlockNumber
+}
+
+func (c *Contract) GetContractDesc(addr string) (ContractDesc, error) {
+	v, ok := c.ContractToDesc[addr]
+	if !ok {
+		return ContractDesc{}, errors.New("not found")
+	}
+	return v, nil
 }
 
 func (e Event) String() string {

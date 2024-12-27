@@ -17,4 +17,5 @@ type IContract interface {
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64
 	Watch(client *rpcclient.EvmClient) error
+	GetContractDesc(addr string) (ContractDesc, error)
 }
