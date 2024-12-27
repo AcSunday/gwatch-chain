@@ -3,6 +3,7 @@ package loadbalance
 import (
 	"context"
 	"github.com/AcSunday/gwatch-chain/rpcclient"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -49,7 +50,14 @@ func New(urls []string) LoadBalance {
 		cancel:        cancel,
 	}
 	l.healthyCliMap[0] = cli
-	go l.checkHealth()
+	go func() {
+		for {
+			wg := &sync.WaitGroup{}
+			wg.Add(1)
+			go l.checkHealth(wg)
+			wg.Wait()
+		}
+	}()
 	return l
 }
 
@@ -59,13 +67,25 @@ func connClient(url string) *rpcclient.EvmClient {
 }
 
 func (l *loadBalance) delayedClosing(cli *rpcclient.EvmClient) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("loadbalance delayed closing, recovered from panic: %v", r)
+		}
+	}()
 	time.Sleep(delayedClosingInterval * time.Second)
 	cli.Close()
 }
 
 // check health
-func (l *loadBalance) checkHealth() {
+func (l *loadBalance) checkHealth(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(checkInterval * time.Second)
+	defer ticker.Stop()
+	defer wg.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("loadbalance check health, recovered from panic: %v", r)
+		}
+	}()
 
 	for {
 		select {
