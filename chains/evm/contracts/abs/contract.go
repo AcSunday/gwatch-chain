@@ -56,7 +56,7 @@ func (c *Contract) Init(attrs Attrs) {
 		c.ProcessedBlockNumber = c.DeployedBlockNumber - 1
 	}
 
-	//c.IsRunning.Store(false)
+	c.IsRunning.Store(true)
 	c.IsClose.Store(false)
 	c.mu = sync.RWMutex{}
 	c.ctx, c.cancel = context.WithCancel(context.Background())
@@ -151,7 +151,7 @@ func (c *Contract) UpdateProcessedBlockNumber(num uint64) error {
 	return nil
 }
 
-// UpdateProcessedBlockNumber ...
+// GetProcessedBlockNumber ...
 func (c *Contract) GetProcessedBlockNumber() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

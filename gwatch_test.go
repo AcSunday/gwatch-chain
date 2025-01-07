@@ -59,6 +59,7 @@ func TestQuickStartERC20(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	e.Close()
 }
 
 func TestQuickStartERC721(t *testing.T) {
@@ -99,4 +100,40 @@ func TestQuickStartERC721(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	e.Close()
+}
+
+func TestQuickStartTRON(t *testing.T) {
+	evmAddr := utils.Tron.ToHexAddress("TEsYH363FySAj9UtDuc3ee6chU8DTLQqr3") // tvm convert to evm address
+	e, err := NewGeneralWatch(
+		[]string{"https://api.shasta.trongrid.io/jsonrpc"},
+		[]common.Address{common.HexToAddress(evmAddr)}, // contract address
+		&Options{
+			Attrs: abs.Attrs{
+				Chain:                "TRON",
+				DeployedBlockNumber:  50701389,
+				ProcessedBlockNumber: 50701389,
+				WatchBlockLimit:      2,
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e.RegisterWatchEvent(abs.Event("0x4764e3effebe9df7fcf8e94a7f91735c90259220bfd64b99f636afae84cfc610"))
+	e.RegisterEventHook(abs.Event("0x4764e3effebe9df7fcf8e94a7f91735c90259220bfd64b99f636afae84cfc610"), func(client *rpcclient.EvmClient, log types.Log) error {
+		t.Logf("------ %d transfer log txhash: %s ------", log.BlockNumber, log.TxHash)
+		t.Logf("topics: %v", log.Topics)
+		t.Logf("data: %x", log.Data)
+		return nil
+	})
+
+	for i := 0; i < 10; i++ {
+		err = e.Watch()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.Close()
 }

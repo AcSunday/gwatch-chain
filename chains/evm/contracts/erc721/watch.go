@@ -16,6 +16,5 @@ func New(addrs []common.Address, attrs *abs.Attrs) *ERC721 {
 		},
 	}
 	e.Init(*attrs)
-	e.IsRunning.Store(true)
 	return e
 }
