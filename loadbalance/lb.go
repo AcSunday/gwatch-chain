@@ -62,7 +62,7 @@ func New(urls []string) LoadBalance {
 }
 
 func connClient(url string) *rpcclient.EvmClient {
-	client, _ := rpcclient.NewEvmRpcClient(url)
+	client := rpcclient.MustNewEvmRpcClient(url)
 	return client
 }
 
