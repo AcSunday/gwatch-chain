@@ -12,7 +12,9 @@ import (
 const (
 	// check interval
 	checkInterval          = 5
-	delayedClosingInterval = 10
+	delayedClosingInterval = 20
+
+	unhealthyTolerateVal = 3
 )
 
 type LoadBalance interface {
@@ -26,6 +28,7 @@ type loadBalance struct {
 	chainId       uint64
 	urls          []string
 	healthyCliMap map[int]*rpcclient.EvmClient
+	hitUnhealthy  []int
 	currentIndex  int
 	lock          *sync.RWMutex
 	ctx           context.Context
@@ -44,6 +47,7 @@ func New(urls []string) LoadBalance {
 		chainId:       cli.GetChainId(),
 		urls:          urls,
 		healthyCliMap: make(map[int]*rpcclient.EvmClient, len(urls)),
+		hitUnhealthy:  make([]int, len(urls)),
 		currentIndex:  0,
 		lock:          &sync.RWMutex{},
 		ctx:           ctx,
@@ -62,7 +66,7 @@ func New(urls []string) LoadBalance {
 }
 
 func connClient(url string) *rpcclient.EvmClient {
-	client := rpcclient.MustNewEvmRpcClient(url)
+	client, _ := rpcclient.NewEvmRpcClient(url)
 	return client
 }
 
@@ -94,6 +98,11 @@ func (l *loadBalance) checkHealth(wg *sync.WaitGroup) {
 		case <-ticker.C:
 			for i, url := range l.urls {
 				if !isHealthy(url) {
+					l.hitUnhealthy[i]++
+					if l.hitUnhealthy[i] <= unhealthyTolerateVal {
+						continue
+					}
+
 					l.lock.Lock()
 					if cli, ok := l.healthyCliMap[i]; ok {
 						delete(l.healthyCliMap, i)
@@ -111,6 +120,7 @@ func (l *loadBalance) checkHealth(wg *sync.WaitGroup) {
 						continue
 					}
 					l.healthyCliMap[i] = cli
+					l.hitUnhealthy[i] = 0
 				}
 				l.lock.Unlock()
 			}

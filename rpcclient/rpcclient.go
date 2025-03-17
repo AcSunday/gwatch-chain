@@ -2,6 +2,7 @@ package rpcclient
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"time"
 )
@@ -30,6 +31,7 @@ func NewEvmRpcClient(rawurl string) (*EvmClient, error) {
 func MustNewEvmRpcClient(rawurl string) *EvmClient {
 	c, err := NewEvmRpcClient(rawurl)
 	if err != nil {
+		err = fmt.Errorf("failed to dial %s, %v", rawurl, err)
 		panic(err)
 	}
 	return c

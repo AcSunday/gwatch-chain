@@ -1,6 +1,7 @@
 package rpcclient
 
 import (
+	"fmt"
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
@@ -32,6 +33,7 @@ func NewSolClient(rawurl string, chainId uint64) (*SolClient, error) {
 func MustNewSolClient(rawurl string, chainId uint64) *SolClient {
 	c, err := NewSolClient(rawurl, chainId)
 	if err != nil {
+		err = fmt.Errorf("failed to dial %s, %v", rawurl, err)
 		panic(err)
 	}
 	return c
