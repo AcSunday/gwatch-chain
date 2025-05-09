@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *Contract) Watch(client *rpcclient.EvmClient) error {
+func (c *Contract) Scan(client *rpcclient.EvmClient) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

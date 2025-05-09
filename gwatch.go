@@ -46,7 +46,7 @@ func (w *watch) Watch() error {
 	if cli == nil {
 		return errors.New("no clients available, failed to connect to blockchain")
 	}
-	return w.IContract.Watch(cli)
+	return w.IContract.Scan(cli)
 }
 
 func (w *watch) Close() error {

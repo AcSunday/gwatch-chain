@@ -58,7 +58,7 @@ func TestWatch(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
-		err = contract.Watch(client)
+		err = contract.Scan(client)
 		if err != nil {
 			t.Fatal(err)
 		}

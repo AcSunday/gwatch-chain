@@ -16,7 +16,7 @@ import (
 
 var NotFoundProgramDataErr = errors.New("program data not found")
 
-func (c *Contract) Watch(client *rpcclient.SolClient) error {
+func (c *Contract) Scan(client *rpcclient.SolClient) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

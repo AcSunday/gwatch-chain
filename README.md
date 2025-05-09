@@ -1,6 +1,21 @@
-watch transaction events on the blockchain
+<p align="center">
+  <img src="docs/statics/go.png" alt="gwatch-chain" width="300">
+</p>
 
-go version 1.22.2
+<h1 align="center">gwatch-chain</h1>
+
+<p align="center">
+<img src="https://img.shields.io/github/go-mod/go-version/AcSunday/gwatch-chain?style=flat-square" alt="Go Version">
+<img src="https://img.shields.io/github/license/AcSunday/gwatch-chain?style=flat-square" alt="License">
+</p>
+
+<p align="center">
+  <b>gwatch-chain</b> is a Golang SDK for blockchain scanning.
+</p>
+
+---
+
+watch transaction events on the blockchain
 
 区块扫描，合约事件扫描
 

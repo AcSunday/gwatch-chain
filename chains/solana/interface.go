@@ -13,6 +13,6 @@ type IContract interface {
 	HandleEvent(client *rpcclient.SolClient, event Event, txInfo TxInfo) error
 	UpdateProcessedTxSignature(txSig solana.Signature) error
 	GetProcessedBlockNumber() solana.Signature
-	Watch(client *rpcclient.SolClient) error
+	Scan(client *rpcclient.SolClient) error
 	GetContractDesc(programId string) (ContractDesc, error)
 }

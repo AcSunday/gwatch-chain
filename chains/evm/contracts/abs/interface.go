@@ -16,6 +16,6 @@ type IContract interface {
 	HandleEvent(client *rpcclient.EvmClient, event Event, log types.Log) error
 	UpdateProcessedBlockNumber(num uint64) error
 	GetProcessedBlockNumber() uint64
-	Watch(client *rpcclient.EvmClient) error
+	Scan(client *rpcclient.EvmClient) error
 	GetContractDesc(addr string) (ContractDesc, error)
 }

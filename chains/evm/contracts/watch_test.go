@@ -54,7 +54,7 @@ func TestWatchERC20(t *testing.T) {
 	})
 
 	for i := 0; i < 1; i++ {
-		err = e.Watch(client)
+		err = e.Scan(client)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,7 +91,7 @@ func TestWatchERC721(t *testing.T) {
 	})
 
 	for i := 0; i < 10; i++ {
-		err = e.Watch(client)
+		err = e.Scan(client)
 		if err != nil {
 			t.Fatal(err)
 		}

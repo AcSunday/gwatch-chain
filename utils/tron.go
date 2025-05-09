@@ -16,12 +16,12 @@ var (
 	base58Alphabets = []byte("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 )
 
-// ToHexAddress to original addr
+// ToHexAddress to original addr(EVM)
 func (t *tron) ToHexAddress(address string) string {
 	return hex.EncodeToString(base58Decode([]byte(address)))
 }
 
-// FromHexAddress convert to tvm addr
+// FromHexAddress convert to TVM addr
 func (t *tron) FromHexAddress(hexAddress string) (string, error) {
 	if !strings.HasPrefix(hexAddress, "41") {
 		hexAddress = fmt.Sprintf("41%s", hexAddress)
