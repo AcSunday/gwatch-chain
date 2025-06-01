@@ -2,6 +2,7 @@ package gwatch
 
 import (
 	"errors"
+
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
@@ -31,7 +32,7 @@ type Options struct {
 }
 
 type watch struct {
-	lb loadbalance.LoadBalance
+	lb loadbalance.LoadBalance[*rpcclient.EvmClient]
 	abs.IContract
 }
 
@@ -56,7 +57,7 @@ func (w *watch) Close() error {
 }
 
 func NewERC721Watch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {
-	l := loadbalance.New(rawurls)
+	l := loadbalance.New(rawurls, rpcclient.NewEvmRpcClient)
 
 	e := erc721.New(addrs, &ops.Attrs)
 	e.ChainId = l.GetChainId()
@@ -65,7 +66,7 @@ func NewERC721Watch(rawurls []string, addrs []common.Address, ops *Options) (IWa
 }
 
 func NewGeneralWatch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {
-	l := loadbalance.New(rawurls)
+	l := loadbalance.New(rawurls, rpcclient.NewEvmRpcClient)
 
 	e := erc20.New(addrs, &ops.Attrs)
 	e.ChainId = l.GetChainId()
@@ -73,7 +74,7 @@ func NewGeneralWatch(rawurls []string, addrs []common.Address, ops *Options) (IW
 	return &watch{lb: l, IContract: e}, nil
 }
 
-func NewLoadBalanceGeneralWatch(lb loadbalance.LoadBalance, addrs []common.Address, ops *Options) (IWatch, error) {
+func NewLoadBalanceGeneralWatch(lb loadbalance.LoadBalance[*rpcclient.EvmClient], addrs []common.Address, ops *Options) (IWatch, error) {
 	e := erc20.New(addrs, &ops.Attrs)
 	e.ChainId = lb.GetChainId()
 

@@ -7,8 +7,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/AcSunday/gwatch-chain/rpcclient"
 )
 
 const (
@@ -21,6 +19,20 @@ const (
 	idleConnTimeout      = 90 * time.Second
 	clientTimeout        = 1 * time.Second
 )
+
+// RPCClient 定义了RPC客户端需要实现的通用接口
+type RPCClient interface {
+	comparable
+	// Close 关闭客户端连接
+	Close()
+	// GetRawUrl 获取原始URL
+	GetRawUrl() string
+	// GetChainId 获取链ID
+	GetChainId() uint64
+}
+
+// ClientFactory 定义了创建客户端的工厂函数类型
+type ClientFactory[T RPCClient] func(url string) (T, error)
 
 // 客户端连接池
 var clientPool = sync.Pool{
@@ -36,50 +48,61 @@ var clientPool = sync.Pool{
 	},
 }
 
-type LoadBalance interface {
+// LoadBalance 负载均衡器接口
+type LoadBalance[T RPCClient] interface {
 	Close()
 	SetMode(mode int)
 	GetChainId() uint64
-	NextClient() *rpcclient.EvmClient
+	NextClient() T
 }
 
-type nodeInfo struct {
-	client       *rpcclient.EvmClient
+// nodeInfo 节点信息
+type nodeInfo[T RPCClient] struct {
+	client       T
 	unhealthyCnt int32
 	lastCheck    int64 // Unix timestamp
 }
 
-type loadBalance struct {
+// loadBalance 负载均衡器实现
+type loadBalance[T RPCClient] struct {
 	chainId       uint64
 	urls          []string
-	nodes         []nodeInfo
-	nodesSnapshot atomic.Value // []*nodeInfo
+	nodes         []nodeInfo[T]
+	nodesSnapshot atomic.Value // []*nodeInfo[T]
 	currentIndex  atomic.Int32
 	ctx           context.Context
 	cancel        context.CancelFunc
+	factory       ClientFactory[T]
 }
 
-func New(urls []string) LoadBalance {
+// New 创建新的负载均衡器
+func New[T RPCClient](urls []string, factory ClientFactory[T]) LoadBalance[T] {
 	if len(urls) == 0 {
 		return nil
 	}
-	cli := rpcclient.MustNewEvmRpcClient(urls[0])
+
+	// 创建第一个客户端
+	cli, err := factory(urls[0])
+	if err != nil {
+		return nil
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	l := &loadBalance{
+	l := &loadBalance[T]{
 		chainId: cli.GetChainId(),
 		urls:    urls,
-		nodes:   make([]nodeInfo, len(urls)),
+		nodes:   make([]nodeInfo[T], len(urls)),
 		ctx:     ctx,
 		cancel:  cancel,
+		factory: factory,
 	}
 
 	// 初始化节点信息
-	l.nodes[0] = nodeInfo{client: cli}
+	l.nodes[0] = nodeInfo[T]{client: cli}
 	for i := 1; i < len(urls); i++ {
-		if client := connClient(urls[i]); client != nil {
-			l.nodes[i] = nodeInfo{client: client}
+		if client, err := factory(urls[i]); err == nil {
+			l.nodes[i] = nodeInfo[T]{client: client}
 		}
 	}
 
@@ -92,22 +115,23 @@ func New(urls []string) LoadBalance {
 	return l
 }
 
-func (l *loadBalance) updateNodesSnapshot() {
-	healthyNodes := make([]*nodeInfo, 0, len(l.nodes))
+func (l *loadBalance[T]) updateNodesSnapshot() {
+	healthyNodes := make([]*nodeInfo[T], 0, len(l.nodes))
 	for i := range l.nodes {
-		if l.nodes[i].client != nil && atomic.LoadInt32(&l.nodes[i].unhealthyCnt) < unhealthyTolerateVal {
+		if !l.isZero(l.nodes[i].client) && atomic.LoadInt32(&l.nodes[i].unhealthyCnt) < unhealthyTolerateVal {
 			healthyNodes = append(healthyNodes, &l.nodes[i])
 		}
 	}
 	l.nodesSnapshot.Store(healthyNodes)
 }
 
-func connClient(url string) *rpcclient.EvmClient {
-	client, _ := rpcclient.NewEvmRpcClient(url)
-	return client
+// isZero 检查客户端是否为零值
+func (l *loadBalance[T]) isZero(client T) bool {
+	var zero T
+	return client == zero
 }
 
-func (l *loadBalance) healthCheckLoop() {
+func (l *loadBalance[T]) healthCheckLoop() {
 	ticker := time.NewTicker(checkInterval * time.Second)
 	defer ticker.Stop()
 
@@ -121,7 +145,7 @@ func (l *loadBalance) healthCheckLoop() {
 	}
 }
 
-func (l *loadBalance) parallelHealthCheck() {
+func (l *loadBalance[T]) parallelHealthCheck() {
 	var wg sync.WaitGroup
 	wg.Add(len(l.urls))
 
@@ -135,7 +159,7 @@ func (l *loadBalance) parallelHealthCheck() {
 			}()
 
 			node := &l.nodes[idx]
-			if node.client == nil {
+			if l.isZero(node.client) {
 				return
 			}
 
@@ -143,15 +167,16 @@ func (l *loadBalance) parallelHealthCheck() {
 				unhealthyCnt := atomic.AddInt32(&node.unhealthyCnt, 1)
 				if unhealthyCnt >= unhealthyTolerateVal {
 					oldClient := node.client
-					node.client = nil
+					var zero T
+					node.client = zero
 					go l.delayedClosing(oldClient)
 				}
 			} else {
 				atomic.StoreInt32(&node.unhealthyCnt, 0)
 				atomic.StoreInt64(&node.lastCheck, time.Now().Unix())
 
-				if node.client == nil {
-					if newClient := connClient(l.urls[idx]); newClient != nil && l.chainId == newClient.GetChainId() {
+				if l.isZero(node.client) {
+					if newClient, err := l.factory(l.urls[idx]); err == nil && l.chainId == newClient.GetChainId() {
 						node.client = newClient
 					}
 				}
@@ -163,7 +188,7 @@ func (l *loadBalance) parallelHealthCheck() {
 	l.updateNodesSnapshot()
 }
 
-func (l *loadBalance) delayedClosing(cli *rpcclient.EvmClient) {
+func (l *loadBalance[T]) delayedClosing(cli T) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("delayed closing panic recovered: %v", r)
@@ -173,7 +198,6 @@ func (l *loadBalance) delayedClosing(cli *rpcclient.EvmClient) {
 	cli.Close()
 }
 
-// check url is healthy
 func isHealthy(url string) bool {
 	client := clientPool.Get().(*http.Client)
 	defer clientPool.Put(client)
@@ -195,16 +219,15 @@ func isHealthy(url string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-// set mode
-func (l *loadBalance) SetMode(mode int) {
+func (l *loadBalance[T]) SetMode(mode int) {
 	// 预留接口，支持不同的负载均衡模式
 }
 
-// get client
-func (l *loadBalance) NextClient() *rpcclient.EvmClient {
-	nodes := l.nodesSnapshot.Load().([]*nodeInfo)
+func (l *loadBalance[T]) NextClient() T {
+	nodes := l.nodesSnapshot.Load().([]*nodeInfo[T])
 	if len(nodes) == 0 {
-		return nil
+		var zero T
+		return zero
 	}
 
 	// 使用原子操作更新索引
@@ -214,14 +237,14 @@ func (l *loadBalance) NextClient() *rpcclient.EvmClient {
 	return node.client
 }
 
-func (l *loadBalance) GetChainId() uint64 {
+func (l *loadBalance[T]) GetChainId() uint64 {
 	return l.chainId
 }
 
-func (l *loadBalance) Close() {
+func (l *loadBalance[T]) Close() {
 	l.cancel()
 	for i := range l.nodes {
-		if l.nodes[i].client != nil {
+		if !l.isZero(l.nodes[i].client) {
 			l.nodes[i].client.Close()
 		}
 	}
