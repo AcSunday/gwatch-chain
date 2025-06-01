@@ -18,6 +18,7 @@ package loadbalance
 // 		if cli != nil {
 // 			t.Logf("check healthy, cli url: %s", cli.GetRawUrl())
 // 		}
+// 		lb.ReleaseClient(cli)
 
 // 		time.Sleep(1 * time.Second)
 // 	}

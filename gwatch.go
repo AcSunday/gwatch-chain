@@ -5,7 +5,6 @@ import (
 
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
-	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
 	"github.com/AcSunday/gwatch-chain/loadbalance"
 	"github.com/AcSunday/gwatch-chain/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -47,22 +46,19 @@ func (w *watch) Watch() error {
 	if cli == nil {
 		return errors.New("no clients available, failed to connect to blockchain")
 	}
-	return w.IContract.Scan(cli)
+
+	err := w.IContract.Scan(cli)
+	if err != nil {
+		return err
+	}
+	w.lb.ReleaseClient(cli)
+	return nil
 }
 
 func (w *watch) Close() error {
 	w.IContract.Close()
 	w.lb.Close()
 	return nil
-}
-
-func NewERC721Watch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {
-	l := loadbalance.New(rawurls, rpcclient.NewEvmRpcClient)
-
-	e := erc721.New(addrs, &ops.Attrs)
-	e.ChainId = l.GetChainId()
-
-	return &watch{lb: l, IContract: e}, nil
 }
 
 func NewGeneralWatch(rawurls []string, addrs []common.Address, ops *Options) (IWatch, error) {

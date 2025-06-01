@@ -53,6 +53,7 @@ func TestLB_CheckHealthy(t *testing.T) {
 		if cli != nil {
 			t.Logf("check healthy, cli url: %s", cli.GetRawUrl())
 		}
+		lb.ReleaseClient(cli)
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -72,6 +73,7 @@ func BenchmarkLoadBalance_NextClient(b *testing.B) {
 		if cli == nil {
 			b.Fatal("no client available")
 		}
+		lb.ReleaseClient(cli)
 	}
 }
 
@@ -91,6 +93,7 @@ func BenchmarkLoadBalance_NextClient_Parallel(b *testing.B) {
 			if cli == nil {
 				b.Fatal("no client available")
 			}
+			lb.ReleaseClient(cli)
 		}
 	})
 }
@@ -126,6 +129,7 @@ func BenchmarkLoadBalance_HighLoad(b *testing.B) {
 				if cli == nil {
 					b.Fatal("no client available")
 				}
+				lb.ReleaseClient(cli)
 			}
 		}
 	})

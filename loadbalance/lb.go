@@ -54,25 +54,27 @@ type LoadBalance[T RPCClient] interface {
 	SetMode(mode int)
 	GetChainId() uint64
 	NextClient() T
+	ReleaseClient(T)
 }
 
 // nodeInfo 节点信息
 type nodeInfo[T RPCClient] struct {
 	client       T
-	unhealthyCnt int32
-	lastCheck    int64 // Unix timestamp
+	unhealthyCnt atomic.Int32
+	lastCheck    atomic.Int64 // Unix timestamp
+	refCount     atomic.Int32
 }
 
 // loadBalance 负载均衡器实现
 type loadBalance[T RPCClient] struct {
-	chainId       uint64
-	urls          []string
-	nodes         []nodeInfo[T]
-	nodesSnapshot atomic.Value // []*nodeInfo[T]
-	currentIndex  atomic.Int32
-	ctx           context.Context
-	cancel        context.CancelFunc
-	factory       ClientFactory[T]
+	chainId      uint64
+	urls         []string
+	nodes        []*nodeInfo[T]
+	nodeSnapshot atomic.Value  // []*nodeInfo[T]
+	currentIndex atomic.Uint32 // 使用 Uint32 避免负数
+	ctx          context.Context
+	cancel       context.CancelFunc
+	factory      ClientFactory[T]
 }
 
 // New 创建新的负载均衡器
@@ -92,17 +94,18 @@ func New[T RPCClient](urls []string, factory ClientFactory[T]) LoadBalance[T] {
 	l := &loadBalance[T]{
 		chainId: cli.GetChainId(),
 		urls:    urls,
-		nodes:   make([]nodeInfo[T], len(urls)),
+		nodes:   make([]*nodeInfo[T], len(urls)),
 		ctx:     ctx,
 		cancel:  cancel,
 		factory: factory,
 	}
 
 	// 初始化节点信息
-	l.nodes[0] = nodeInfo[T]{client: cli}
+	l.nodes[0] = &nodeInfo[T]{client: cli}
+
 	for i := 1; i < len(urls); i++ {
 		if client, err := factory(urls[i]); err == nil {
-			l.nodes[i] = nodeInfo[T]{client: client}
+			l.nodes[i] = &nodeInfo[T]{client: client}
 		}
 	}
 
@@ -117,12 +120,14 @@ func New[T RPCClient](urls []string, factory ClientFactory[T]) LoadBalance[T] {
 
 func (l *loadBalance[T]) updateNodesSnapshot() {
 	healthyNodes := make([]*nodeInfo[T], 0, len(l.nodes))
-	for i := range l.nodes {
-		if !l.isZero(l.nodes[i].client) && atomic.LoadInt32(&l.nodes[i].unhealthyCnt) < unhealthyTolerateVal {
-			healthyNodes = append(healthyNodes, &l.nodes[i])
+	for _, node := range l.nodes {
+		if node != nil && !l.isZero(node.client) && node.unhealthyCnt.Load() < unhealthyTolerateVal {
+			healthyNodes = append(healthyNodes, node)
 		}
 	}
-	l.nodesSnapshot.Store(healthyNodes)
+	if len(healthyNodes) > 0 {
+		l.nodeSnapshot.Store(healthyNodes)
+	}
 }
 
 // isZero 检查客户端是否为零值
@@ -158,22 +163,33 @@ func (l *loadBalance[T]) parallelHealthCheck() {
 				}
 			}()
 
-			node := &l.nodes[idx]
-			if l.isZero(node.client) {
+			node := l.nodes[idx]
+			if node == nil || l.isZero(node.client) {
+				return
+			}
+
+			now := time.Now().Unix()
+			// 添加健康检查间隔
+			if now-node.lastCheck.Load() < checkInterval {
 				return
 			}
 
 			if !isHealthy(l.urls[idx]) {
-				unhealthyCnt := atomic.AddInt32(&node.unhealthyCnt, 1)
+				unhealthyCnt := node.unhealthyCnt.Add(1)
 				if unhealthyCnt >= unhealthyTolerateVal {
 					oldClient := node.client
 					var zero T
 					node.client = zero
-					go l.delayedClosing(oldClient)
+					if node.refCount.Load() == 0 {
+						oldClient.Close()
+					} else {
+						go l.delayedClosing(oldClient)
+					}
 				}
 			} else {
-				atomic.StoreInt32(&node.unhealthyCnt, 0)
-				atomic.StoreInt64(&node.lastCheck, time.Now().Unix())
+				// 健康时重置不健康计数
+				node.unhealthyCnt.Store(0)
+				node.lastCheck.Store(now)
 
 				if l.isZero(node.client) {
 					if newClient, err := l.factory(l.urls[idx]); err == nil && l.chainId == newClient.GetChainId() {
@@ -194,8 +210,35 @@ func (l *loadBalance[T]) delayedClosing(cli T) {
 			log.Printf("delayed closing panic recovered: %v", r)
 		}
 	}()
-	time.Sleep(delayedClosingInterval * time.Second)
-	cli.Close()
+
+	ctx, cancel := context.WithTimeout(l.ctx, 30*time.Second)
+	defer cancel()
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			cli.Close()
+			return
+		case <-ticker.C:
+			found := false
+			for _, node := range l.nodes {
+				if node != nil && !l.isZero(node.client) && node.client == cli {
+					if node.refCount.Load() == 0 {
+						cli.Close()
+						return
+					}
+					found = true
+					break
+				}
+			}
+			if !found {
+				return
+			}
+		}
+	}
 }
 
 func isHealthy(url string) bool {
@@ -224,17 +267,32 @@ func (l *loadBalance[T]) SetMode(mode int) {
 }
 
 func (l *loadBalance[T]) NextClient() T {
-	nodes := l.nodesSnapshot.Load().([]*nodeInfo[T])
+	nodesI := l.nodeSnapshot.Load()
+	if nodesI == nil {
+		var zero T
+		return zero
+	}
+
+	nodes := nodesI.([]*nodeInfo[T])
 	if len(nodes) == 0 {
 		var zero T
 		return zero
 	}
 
-	// 使用原子操作更新索引
+	// 使用 Uint32，永远为正数
 	idx := l.currentIndex.Add(1)
-	node := nodes[idx%int32(len(nodes))]
-
+	node := nodes[idx%uint32(len(nodes))]
+	node.refCount.Add(1)
 	return node.client
+}
+
+func (l *loadBalance[T]) ReleaseClient(cli T) {
+	for _, node := range l.nodes {
+		if node != nil && !l.isZero(node.client) && node.client == cli {
+			node.refCount.Add(-1)
+			return
+		}
+	}
 }
 
 func (l *loadBalance[T]) GetChainId() uint64 {
@@ -243,9 +301,47 @@ func (l *loadBalance[T]) GetChainId() uint64 {
 
 func (l *loadBalance[T]) Close() {
 	l.cancel()
-	for i := range l.nodes {
-		if !l.isZero(l.nodes[i].client) {
-			l.nodes[i].client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	for _, node := range l.nodes {
+		if node != nil && !l.isZero(node.client) {
+			wg.Add(1)
+			go func(n *nodeInfo[T]) {
+				defer wg.Done()
+
+				ticker := time.NewTicker(100 * time.Millisecond)
+				defer ticker.Stop()
+
+				cli := n.client
+				for {
+					select {
+					case <-ctx.Done():
+						cli.Close()
+						return
+					case <-ticker.C:
+						if n.refCount.Load() == 0 {
+							cli.Close()
+							return
+						}
+					}
+				}
+			}(node)
 		}
+	}
+
+	waitCh := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(waitCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		// log.Printf("load balancer close timeout after 10s")
+	case <-waitCh:
+		// log.Printf("load balancer closed gracefully")
 	}
 }

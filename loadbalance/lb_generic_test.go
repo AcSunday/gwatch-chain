@@ -52,7 +52,7 @@ func TestGenericLoadBalance_Basic(t *testing.T) {
 	}()
 
 	// 创建负载均衡器
-	lb := New[MockRPCClient](urls, mockClientFactory)
+	lb := New(urls, mockClientFactory)
 	if lb == nil {
 		t.Fatal("failed to create load balancer")
 	}
@@ -64,6 +64,7 @@ func TestGenericLoadBalance_Basic(t *testing.T) {
 		if client == (MockRPCClient{}) {
 			t.Fatal("got zero client")
 		}
+		lb.ReleaseClient(client)
 		t.Logf("got client with url: %s", client.GetRawUrl())
 	}
 }
@@ -89,7 +90,7 @@ func BenchmarkGenericLoadBalance_NextClient(b *testing.B) {
 	}()
 
 	// 创建负载均衡器
-	lb := New[MockRPCClient](urls, mockClientFactory)
+	lb := New(urls, mockClientFactory)
 	if lb == nil {
 		b.Fatal("failed to create load balancer")
 	}
@@ -105,6 +106,7 @@ func BenchmarkGenericLoadBalance_NextClient(b *testing.B) {
 			if client == (MockRPCClient{}) {
 				b.Fatal("got zero client")
 			}
+			lb.ReleaseClient(client)
 		}
 	})
 }
@@ -119,7 +121,7 @@ func Example() {
 	}
 
 	// 创建负载均衡器
-	lb := New[MockRPCClient](urls, mockClientFactory)
+	lb := New(urls, mockClientFactory)
 	if lb == nil {
 		return
 	}
@@ -128,4 +130,5 @@ func Example() {
 	// 获取客户端并使用
 	client := lb.NextClient()
 	_ = client.GetRawUrl() // 实际使用中调用客户端方法
+	lb.ReleaseClient(client)
 }

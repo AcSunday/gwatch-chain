@@ -1,6 +1,8 @@
 package gwatch
 
 import (
+	"testing"
+
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/abs"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc20"
 	"github.com/AcSunday/gwatch-chain/chains/evm/contracts/erc721"
@@ -8,7 +10,6 @@ import (
 	"github.com/AcSunday/gwatch-chain/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"testing"
 )
 
 const (
@@ -63,7 +64,7 @@ func TestQuickStartERC20(t *testing.T) {
 }
 
 func TestQuickStartERC721(t *testing.T) {
-	e, err := NewERC721Watch(
+	e, err := NewGeneralWatch(
 		[]string{"https://sepolia.infura.io/v3/f6ef0da20fa14730ae77a316d88c0516"},
 		[]common.Address{common.HexToAddress(ERC721)},
 		&Options{
